@@ -173,7 +173,6 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var audioTrackButton: ImageButton
     private lateinit var backButton: ImageButton
     private lateinit var exoContentFrameLayout: AspectRatioFrameLayout
-    private lateinit var lockControlsButton: ImageButton
     private lateinit var playbackSpeedButton: ImageButton
     private lateinit var playerLockControls: FrameLayout
     private lateinit var playerUnlockControls: FrameLayout
@@ -185,8 +184,6 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var unlockControlsButton: ImageButton
     private lateinit var videoTitleTextView: TextView
     private lateinit var videoZoomButton: ImageButton
-    private lateinit var playInBackgroundButton: ImageButton
-    private lateinit var loopModeButton: ImageButton
     private lateinit var extraControls: LinearLayout
 
     private val isPipSupported: Boolean by lazy {
@@ -237,7 +234,6 @@ class PlayerActivity : AppCompatActivity() {
         audioTrackButton = binding.playerView.findViewById(R.id.btn_audio_track)
         backButton = binding.playerView.findViewById(R.id.back_button)
         exoContentFrameLayout = binding.playerView.findViewById(R.id.exo_content_frame)
-        lockControlsButton = binding.playerView.findViewById(R.id.btn_lock_controls)
         playbackSpeedButton = binding.playerView.findViewById(R.id.btn_playback_speed)
         playerLockControls = binding.playerView.findViewById(R.id.player_lock_controls)
         playerUnlockControls = binding.playerView.findViewById(R.id.player_unlock_controls)
@@ -249,8 +245,6 @@ class PlayerActivity : AppCompatActivity() {
         unlockControlsButton = binding.playerView.findViewById(R.id.btn_unlock_controls)
         videoTitleTextView = binding.playerView.findViewById(R.id.video_name)
         videoZoomButton = binding.playerView.findViewById(R.id.btn_video_zoom)
-        playInBackgroundButton = binding.playerView.findViewById(R.id.btn_background)
-        loopModeButton = binding.playerView.findViewById(R.id.btn_loop_mode)
         extraControls = binding.playerView.findViewById(R.id.extra_controls)
 
         if (playerPreferences.controlButtonsPosition == ControlButtonsPosition.RIGHT) {
@@ -341,7 +335,7 @@ class PlayerActivity : AppCompatActivity() {
                 binding.playerView.player = this
                 isMediaItemReady = currentMediaItem != null
                 toggleSystemBars(showBars = binding.playerView.isControllerFullyVisible)
-                videoTitleTextView.text = currentMediaItem?.mediaMetadata?.title
+                videoTitleTextView.text = currentMediaItem?.mediaMetadata?.title?.removeFileExtension()
                 applyLoopMode(playerPreferences.loopMode)
                 if (playerPreferences.shouldUseVolumeBoost) {
                     try {
@@ -603,12 +597,6 @@ class PlayerActivity : AppCompatActivity() {
             ).show(supportFragmentManager, "PlaybackSpeedSelectionDialog")
         }
 
-        lockControlsButton.setOnClickListener {
-            playerUnlockControls.visibility = View.INVISIBLE
-            playerLockControls.visibility = View.VISIBLE
-            isControlsLocked = true
-            toggleSystemBars(showBars = false)
-        }
         unlockControlsButton.setOnClickListener {
             playerLockControls.visibility = View.INVISIBLE
             playerUnlockControls.visibility = View.VISIBLE
@@ -650,34 +638,11 @@ class PlayerActivity : AppCompatActivity() {
                 this.enterPictureInPictureMode(updatePictureInPictureParams())
             }
         }
-        playInBackgroundButton.setOnClickListener {
-            playInBackground = true
-            finish()
-        }
         backButton.setOnClickListener {
             onBackPressedDispatcher.onBackPressed()
         }
 
         updateLoopModeIcon(playerPreferences.loopMode)
-        loopModeButton.setOnClickListener {
-            val currentLoopMode = playerPreferences.loopMode
-            val nextLoopMode = when (currentLoopMode) {
-                LoopMode.OFF -> LoopMode.ONE
-                LoopMode.ONE -> LoopMode.ALL
-                LoopMode.ALL -> LoopMode.OFF
-            }
-
-            viewModel.setLoopMode(nextLoopMode)
-            updateLoopModeIcon(nextLoopMode)
-            applyLoopMode(nextLoopMode)
-            showPlayerInfo(
-                info = when (nextLoopMode) {
-                    LoopMode.OFF -> getString(coreUiR.string.loop_mode_off)
-                    LoopMode.ONE -> getString(coreUiR.string.loop_mode_one)
-                    LoopMode.ALL -> getString(coreUiR.string.loop_mode_all)
-                },
-            )
-        }
     }
 
     private fun updateLoopModeIcon(loopMode: LoopMode) {
@@ -686,7 +651,6 @@ class PlayerActivity : AppCompatActivity() {
             LoopMode.ONE -> coreUiR.drawable.ic_loop_one
             LoopMode.ALL -> coreUiR.drawable.ic_loop_all
         }
-        loopModeButton.setImageResource(iconResId)
     }
 
     private fun applyLoopMode(loopMode: LoopMode) {
@@ -772,7 +736,7 @@ class PlayerActivity : AppCompatActivity() {
 
         override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
             super.onMediaMetadataChanged(mediaMetadata)
-            videoTitleTextView.text = mediaMetadata.title
+            videoTitleTextView.text = mediaMetadata.title?.removeFileExtension()
         }
 
         override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -1152,6 +1116,11 @@ class PlayerActivity : AppCompatActivity() {
             delay(HIDE_DELAY_MILLIS)
             binding.infoLayout.visibility = View.GONE
         }
+    }
+
+    fun CharSequence.removeFileExtension(): CharSequence {
+        val str = this.toString()
+        return str.substringBeforeLast(".", str)
     }
 
     companion object {

@@ -8,8 +8,8 @@ plugins {
 
 android {
     namespace = "dev.anilbeesetti.nextplayer"
+    compileSdkVersion(libs.versions.android.compileSdk.get().toInt())
 
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
@@ -61,7 +61,7 @@ android {
         abi {
             isEnable = true
             reset()
-            include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+            include("armeabi-v7a", "arm64-v8a")
             isUniversalApk = true
         }
     }
